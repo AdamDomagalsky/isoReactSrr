@@ -1,2 +1,2 @@
 
-console.info('React is zajebsity!');
+console.info('React is taak!');
