@@ -19,5 +19,24 @@ const render = (_App) => {
   )
 }
 
-render(App)
+// TODO: https://github.com/gaearon/react-hot-loader
+if (module.hot) {
+  module.hot.accept('./App', () => {
+    const NextApp = require('./App').default
+    render(NextApp)
+  })
+}
+
+// render(App)
+
+store.subscribe(() => {
+  const state = store.getState()
+  if (state.questions.length > 0) {
+    console.info('Mouinting app')
+  } else {
+    console.info('App not yet mounting')
+  }
+})
+
+
 fetchDataForLocation()

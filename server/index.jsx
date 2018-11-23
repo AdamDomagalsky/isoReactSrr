@@ -2,9 +2,14 @@
 
 import { question, questions } from "../data/api-real-url";
 
+import App from '../src/App' // Fronend part in backend :D
+import { Provider } from 'react-redux' // Fronend part in backend :D
+import React from 'react' // Fronend part in backend :D
 import express from 'express'
 import fetch from 'node-fetch'
 import fs from 'fs-extra'
+import getStore from '../src/getStore' // Fronend part in backend :D
+import { renderToString } from 'react-dom/server' // Fronend part in backend :D
 import webpack from 'webpack'
 
 const port = process.env.PORT || 2999
@@ -14,6 +19,8 @@ const mockDelay = (ms) => new Promise((resolve) => setTimeout(() => resolve(`moc
 
 // Flag to use Live data from stackexchange API --useLiveData
 const useLiveData = process.argv.includes('--useLiveData')
+// SSR
+const useServerRender = process.argv.includes('--useServerRender')
 
 if (process.env.NODE_ENV == 'development') {
   const config = require('../webpack.config.dev.babel').default
@@ -72,6 +79,27 @@ app.get('/api/questions/:id', async (req, res) => {
 
 app.get(['/'], async (req, res) => {
   let index = await fs.readFile('./public/index.html', 'utf-8')
+
+  const initialState = {
+    questions: []
+  }
+
+  const questions = await getQuestions();
+
+  initialState.questions = questions.items
+
+  const store = getStore(initialState)
+  if (useServerRender) {
+    const appRendered = renderToString(
+      <Provider store={store}>
+        <App />
+      </Provider>
+    )
+    index = index.replace('<%= preloadApplication %>', appRendered)
+  } else {
+    index = index.replace('<%= preloadApplication %>', 'Plz w8 coz app is loading...')
+  }
+
   res.send(index)
 })
 
