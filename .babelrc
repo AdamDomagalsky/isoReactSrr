@@ -3,5 +3,5 @@
     "@babel/react",
     "@babel/env"
   ],
-  "plugins": []
+  "plugins": ["material-ui"]
 }
