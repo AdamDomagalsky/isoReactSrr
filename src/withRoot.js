@@ -41,4 +41,4 @@ function withRoot(Component) {
   return WithRoot;
 }
 
-export default withRoot;
+export {theme, withRoot}

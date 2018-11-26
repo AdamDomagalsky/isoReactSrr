@@ -1,25 +1,35 @@
 'use strict'
 
-import { question, questions } from "../data/api-real-url";
+import {
+  MuiThemeProvider,
+  createGenerateClassName,
+  createMuiTheme,
+} from '@material-ui/core/styles'
+import { question, questions } from '../data/api-real-url'
 
 import App from '../src/App' // Fronend part in backend :D
+import JssProvider from 'react-jss/lib/JssProvider' // material UI ssr
 import { Provider } from 'react-redux' // Fronend part in backend :D
 import React from 'react' // Fronend part in backend :D
+import ReactDOMServer from 'react-dom/server' // Fronend part in backend :D
+import { SheetsRegistry } from 'jss' // css in js for mui
 import express from 'express'
 import fetch from 'node-fetch'
 import fs from 'fs-extra'
 import getStore from '../src/getStore' // Fronend part in backend :D
-import { renderToString } from 'react-dom/server' // Fronend part in backend :D
+import green from '@material-ui/core/colors/green';
+import purple from '@material-ui/core/colors/purple';
+import { theme } from '../src/withRoot' // mui shared theme with frontend
 import webpack from 'webpack'
 
-const port = process.env.PORT || 2999
+const port = process.env.PORT || 2998
 const app = express();
 
 const mockDelay = (ms) => new Promise((resolve) => setTimeout(() => resolve(`mockDelay(${ms})`), ms))
 
 // Flag to use Live data from stackexchange API --useLiveData
 const useLiveData = process.argv.includes('--useLiveData')
-// SSR
+// SSR flag
 const useServerRender = process.argv.includes('--useServerRender')
 
 if (process.env.NODE_ENV == 'development') {
@@ -31,9 +41,9 @@ if (process.env.NODE_ENV == 'development') {
   }))
 
   app.use(require('webpack-hot-middleware')(compiler))
-
 }
 
+// Api fetching
 async function getQuestions() {
   let data;
   if (useLiveData) {
@@ -75,29 +85,45 @@ app.get('/api/questions/:id', async (req, res) => {
   res.json(data)
 })
 
-
-
 app.get(['/'], async (req, res) => {
   let index = await fs.readFile('./public/index.html', 'utf-8')
 
-  const initialState = {
-    questions: []
-  }
-
-  const questions = await getQuestions();
-
-  initialState.questions = questions.items
-
-  const store = getStore(initialState)
+  // SSR check
   if (useServerRender) {
-    const appRendered = renderToString(
-      <Provider store={store}>
-        <App />
-      </Provider>
+    // Store init
+    const initialState = {
+      questions: []
+    }
+    const questions = await getQuestions();
+    initialState.questions = questions.items
+    const store = getStore(initialState)
+
+    // Material UI
+    // Create a sheetsRegistry instance.
+    const sheetsRegistry = new SheetsRegistry();
+    // Create a sheetsManager instance.
+    const sheetsManager = new Map();
+    // Css-in-js Create a new class name generator.
+    const generateClassName = createGenerateClassName();
+
+    const appRendered = ReactDOMServer.renderToString(
+      <JssProvider registry={sheetsRegistry} generateClassName={generateClassName}>
+        <MuiThemeProvider theme={theme} sheetsManager={sheetsManager}>
+          <Provider store={store}>
+            <App />
+          </Provider>
+        </MuiThemeProvider>
+      </JssProvider>
     )
+
     index = index.replace('<%= preloadApplication %>', appRendered)
+    // IMPORTANT! make it after ReactDOMServer.renderToString
+    // Grab the CSS from our sheetsRegistry.
+    const css = sheetsRegistry.toString()
+    index = index.replace('<%= preloadCSSApplication %>', `<style id="jss-server-side">${css}</style>`)
   } else {
     index = index.replace('<%= preloadApplication %>', 'Plz w8 coz app is loading...')
+    index = index.replace('<%= preloadCSSApplication %>', 'Plz w8 coz muiCSS is loading...')
   }
 
   res.send(index)

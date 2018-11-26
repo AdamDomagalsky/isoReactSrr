@@ -5,7 +5,7 @@ import QuestionList from './components/QuestionList';
 import React from 'react'
 import { connect } from 'react-redux'
 // material-ui
-import withRoot from './withRoot'
+import { withRoot } from './withRoot'
 import { withStyles } from '@material-ui/core/styles';
 
 const styles = theme => ({
