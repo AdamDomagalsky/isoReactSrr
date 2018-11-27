@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start-dev": "cross-env NODE_ENV=development babel-node server --useLiveData --useServerRender"
+    "start-dev-live": "cross-env NODE_ENV=development babel-node server --useLiveData",
+    "start-dev-srr-live": "cross-env NODE_ENV=development babel-node server --useLiveData --useServerRender",
+    "start-dev-srr-mock": "cross-env NODE_ENV=development babel-node server --useServerRender",
+    "start-dev-mock": "cross-env NODE_ENV=development babel-node server"
   },
   "keywords": [],
   "author": "",
