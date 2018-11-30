@@ -19,7 +19,7 @@ const QuestionList = ({ questions }) =>
   )
 
 QuestionList.propTypes = {
-  questions: PropTypes.object.isRequired,
+  questions: PropTypes.array.isRequired,
 }
 
 const mapStateToProps = ({ questions }) => ({

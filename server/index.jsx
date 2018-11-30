@@ -8,21 +8,24 @@ import {
 import { question, questions } from '../data/api-real-url'
 
 import App from '../src/App' // Fronend part in backend :D
+import { ConnectedRouter } from 'connected-react-router'
 import JssProvider from 'react-jss/lib/JssProvider' // material UI ssr
 import { Provider } from 'react-redux' // Fronend part in backend :D
 import React from 'react' // Fronend part in backend :D
 import ReactDOMServer from 'react-dom/server' // Fronend part in backend :D
 import { SheetsRegistry } from 'jss' // css in js for mui
+import createHistory from 'history/createMemoryHistory'
 import express from 'express'
 import fetch from 'node-fetch'
 import fs from 'fs-extra'
 import getStore from '../src/getStore' // Fronend part in backend :D
 import green from '@material-ui/core/colors/green';
+import path from 'path'
 import purple from '@material-ui/core/colors/purple';
 import { theme } from '../src/withRoot' // mui shared theme with frontend
 import webpack from 'webpack'
 
-const port = process.env.PORT || 2998
+const port = process.env.PORT || 3000
 const app = express();
 
 const mockDelay = (ms) => new Promise((resolve) => setTimeout(() => resolve(`mockDelay(${ms})`), ms))
@@ -41,6 +44,8 @@ if (process.env.NODE_ENV == 'development') {
   }))
 
   app.use(require('webpack-hot-middleware')(compiler))
+} else {
+  app.use(express.static(path.resolve(__dirname, '../dist')))
 }
 
 // Api fetching
@@ -48,24 +53,26 @@ async function getQuestions() {
   let data;
   if (useLiveData) {
     data = await fetch(questions).then(res => res.json())
-
+    // console.log(data);
     return data
   } else {
     data = await fs.readFile('./data/mock-questions.json')
-
+    // console.log(JSON.parse(data));
     return JSON.parse(data)
   }
 }
 
 async function getQuestion(question_id) {
+
   let data;
   if (useLiveData) {
     data = await fetch(question(question_id)).then(res => res.json())
 
     return data
   } else {
-    const questions = await getQuestions()
-    const question = questions.items.find(_question => _question.question_id == question_id)
+    let questions = await getQuestions()
+    let question = questions.items.find(_question => _question.question_id == question_id)
+
     question.body = `Mock question body: ${question_id}`
     data = { items: [question] }
 
@@ -85,7 +92,7 @@ app.get('/api/questions/:id', async (req, res) => {
   res.json(data)
 })
 
-app.get(['/'], async (req, res) => {
+app.get(['/', '/questions/:id'], async (req, res) => {
   let index = await fs.readFile('./public/index.html', 'utf-8')
 
   // SSR check
@@ -94,9 +101,25 @@ app.get(['/'], async (req, res) => {
     const initialState = {
       questions: []
     }
-    const questions = await getQuestions();
-    initialState.questions = questions.items
-    const store = getStore(initialState)
+
+    const history = createHistory({
+      initialEntries: [req.path],
+    })
+
+    const question_id = req.params.id
+    if (question_id) {
+      const response = await getQuestion(question_id)
+      const questionDetails = response.items[0]
+
+      initialState.questions = [{ ...questionDetails, question_id }]
+    } else {
+      const questions = await getQuestions();
+
+      initialState.questions = questions.items
+    }
+
+
+    const store = getStore(history, initialState)
 
     // Material UI
     // Create a sheetsRegistry instance.
@@ -110,7 +133,9 @@ app.get(['/'], async (req, res) => {
       <JssProvider registry={sheetsRegistry} generateClassName={generateClassName}>
         <MuiThemeProvider theme={theme} sheetsManager={sheetsManager}>
           <Provider store={store}>
-            <App />
+            <ConnectedRouter history={history}>
+              <App />
+            </ConnectedRouter>
           </Provider>
         </MuiThemeProvider>
       </JssProvider>
@@ -121,9 +146,11 @@ app.get(['/'], async (req, res) => {
     // Grab the CSS from our sheetsRegistry.
     const css = sheetsRegistry.toString()
     index = index.replace('<%= preloadCSSApplication %>', `<style id="jss-server-side">${css}</style>`)
+    index = index.replace('<%= preloadBundleApplication %>', `<script type="text/babel" src="./bundle.js"></script>`)
   } else {
     index = index.replace('<%= preloadApplication %>', 'Plz w8 coz app is loading...')
     index = index.replace('<%= preloadCSSApplication %>', 'Plz w8 coz muiCSS is loading...')
+    index = index.replace('<%= preloadBundleApplication %>', '<script src="./bundle.js"></script>')
   }
 
   res.send(index)

@@ -3,6 +3,7 @@ import 'regenerator-runtime/runtime'
 import { Button, Grid } from '@material-ui/core'
 import { Link, Route, Switch } from 'react-router-dom'
 
+import QuestionDetail from './components/QuestionDetail'
 import QuestionList from './components/QuestionList'
 import React from 'react'
 import { connect } from 'react-redux'
@@ -28,12 +29,11 @@ const AppDisplay = ({ classes }) =>
     <Button component={Link} to="/" className={classes.homePageButton} >
       Iso React
     </Button>
-
     <Switch>
       <Route exact path="/" render={() => <QuestionList />} />
-      <Route path="/questions" render={() => (<div>Match more info</div>)} />
+      <Route exact path="/questions/:id" render={({ match }) => <QuestionDetail question_id={match.params.id} />} />
+      <Route render={() => (<div>Not Found Page</div>)} />
     </Switch>
-    <QuestionList />
   </Grid>
 
 const mapStateToProps = (state, ownProps) => {
