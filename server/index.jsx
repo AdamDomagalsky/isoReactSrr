@@ -14,6 +14,7 @@ import { Provider } from 'react-redux' // Fronend part in backend :D
 import React from 'react' // Fronend part in backend :D
 import ReactDOMServer from 'react-dom/server' // Fronend part in backend :D
 import { SheetsRegistry } from 'jss' // css in js for mui
+import bodyParser from 'body-parser'
 import createHistory from 'history/createMemoryHistory'
 import express from 'express'
 import fetch from 'node-fetch'
@@ -25,8 +26,12 @@ import purple from '@material-ui/core/colors/purple';
 import { theme } from '../src/withRoot' // mui shared theme with frontend
 import webpack from 'webpack'
 
+// const bodyParser = require('body-parser')
+
+
 const port = process.env.PORT || 3000
 const app = express();
+app.use(bodyParser.json())
 
 const mockDelay = (ms) => new Promise((resolve) => setTimeout(() => resolve(`mockDelay(${ms})`), ms))
 
@@ -47,6 +52,8 @@ if (process.env.NODE_ENV == 'development') {
 } else {
   app.use(express.static(path.resolve(__dirname, '../dist')))
 }
+
+app.use
 
 // Api fetching
 async function getQuestions() {
@@ -79,6 +86,22 @@ async function getQuestion(question_id) {
     return data
   }
 }
+
+// ACRA android test
+let toReturn = { this: 'empty' };
+app.post('/api/acra', async (req, res) => {
+  // console.log(req.body) // populated!
+  toReturn = req.body
+  console.log(req.headers.authorization);
+  res.json(toReturn)
+})
+
+app.get('/api/acra', async (req, res) => {
+  // console.log(toReturn) // populated!
+
+  res.json(toReturn)
+})
+
 
 app.get('/api/questions', async (req, res) => {
   const data = await getQuestions()
