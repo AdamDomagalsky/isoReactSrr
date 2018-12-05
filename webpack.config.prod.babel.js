@@ -1,72 +1,45 @@
-
-const webpack = require('webpack');
 const path = require('path');
-const TerserPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 
 /**
- * Development webpack config designed to be loaded by express development server
+ * Production Webpack Config bundles JS, then uglifies it and exports it to the "dist" directory
+ * See Development webpack config for detailed comments
  */
-export default {
-    mode: 'production',
-    /**
-     * The scripts in entry are combined in order to create our bundle
-     */
+module.exports = {
     entry: [
-        /**
-         * babel-regenerator-runtime lets us use generators and yield
-         */
-        '@babel/plugin-transform-regenerator',
-        /**
-         * The entry point of the main application
-         */
-        path.resolve(__dirname, 'src/')
+        'babel-regenerator-runtime',
+        path.resolve(__dirname, 'src')
     ],
-    /**
-     * Output contains detailed information about the bundle.js
-     * In this case, bundle.js is never created but server by webpack-dev-middleware in ./server
-     */
     output: {
         path: path.resolve(__dirname, 'dist'),
-        /**
-         * Public path is necessary for webpack HMR to reload correctly when on a path other than '/'
-         */
-        publicPath: '/',
         filename: 'bundle.js',
+        publicPath: '/'
     },
-    optimization: {
-        minimizer: [new TerserPlugin()]
-      },
     plugins: [
-        /**
-         * Defines the env as 'development', which triggers different behaviors in some scripts
-         * To see more, search project for 'development'
-         */
         new webpack.DefinePlugin({
             'process.env': {
                 NODE_ENV: JSON.stringify('production'),
                 WEBPACK: true
             }
-        })
+        }),
+        /**
+         * Uglifies JS which improves performance
+         * React will throw console warnings if this is not implemented
+         */
+        new webpack.optimize.UglifyJsPlugin()
     ],
-    /**
-     * Resolve allows files to be imported without specifying an extension as long as they match one specified, i.e.
-     * import component from './component'
-     */
     resolve: {
         extensions: ['.js', '.json', '.jsx'],
     },
     module: {
-        rules: [
+        loaders: [
             {
-                /**
-                 * Babel loader is used for any JS or JSX files in the src directory
-                 */
-                test: /\.jsx?/,
+                test: /\.jsx?$/,
                 use: {
                     loader: 'babel-loader'
                 },
-                include: path.resolve(__dirname, 'src'),
-            },
+                include: path.resolve(__dirname, 'src')
+            }
         ]
     }
-}
+};

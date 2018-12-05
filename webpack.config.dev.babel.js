@@ -1,12 +1,10 @@
-
-const webpack = require('webpack');
-const path = require('path');
+import webpack from 'webpack';
+import path from 'path';
 
 /**
  * Development webpack config designed to be loaded by express development server
  */
 export default {
-    mode: 'development',
     /**
      * The scripts in entry are combined in order to create our bundle
      */
@@ -19,7 +17,7 @@ export default {
         /**
          * babel-regenerator-runtime lets us use generators and yield
          */
-        '@babel/plugin-transform-regenerator',
+        'babel-regenerator-runtime',
         /**
          * The entry point of the main application
          */
@@ -66,7 +64,7 @@ export default {
         extensions: ['.js', '.json', '.jsx'],
     },
     module: {
-        rules: [
+        loaders: [
             {
                 /**
                  * Babel loader is used for any JS or JSX files in the src directory

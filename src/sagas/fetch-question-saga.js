@@ -1,15 +1,23 @@
 import { put, takeEvery } from 'redux-saga/effects'
 
-import fetch from 'isomorphic-fetch'
+import fetch from 'isomorphic-fetch';
 
-export default function * (){
-  yield takeEvery('REQUEST_FETCH_QUESTION',handleFetchQuestion)
-
+export default function * () {
+    /**
+     * Every time REQUEST_FETCH_QUESTION, fork a handleFetchQuestion process for it
+     */
+    yield takeEvery(`REQUEST_FETCH_QUESTION`,handleFetchQuestion);
 }
 
-function * handleFetchQuestion({question_id}) {
-  const raw = yield fetch(`/api/question/${question_id}`)
-  const json = yield raw.json()
-  const question = json.items[0]
-  yield put({type:'FETCHED_QUESTION', question})
+/**
+ * Fetch question details from the local proxy API
+ */
+export function * handleFetchQuestion ({question_id}) {
+    const raw = yield fetch(`/api/questions/${question_id}`);
+    const json = yield raw.json();
+    const question = json.items[0];
+    /**
+     * Notify application that question has been fetched
+     */
+    yield put({type:`FETCHED_QUESTION`,question});
 }
